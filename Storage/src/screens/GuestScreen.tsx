@@ -14,7 +14,7 @@ export default function GuestScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>👤 Guest Access</Text>
       <Text style={styles.text}>
-        You are browsing as a guest. Limited features available.
+        You are Browse as a guest. Limited features available.
       </Text>
 
       <TouchableOpacity
@@ -33,19 +33,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#0F172A',
+    padding: 20,
   },
   title: {
-    fontSize: 22,
+    fontSize: 26,
     color: '#38BDF8',
     fontWeight: '700',
-    marginBottom: 12,
+    marginBottom: 20,
+    textAlign: 'center',
   },
-  text: { color: '#CBD5E1', marginBottom: 24 },
+  text: {
+    color: '#CBD5E1',
+    marginBottom: 30,
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
   button: {
     backgroundColor: '#4F46E5',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingHorizontal: 25,
+    paddingVertical: 14,
     borderRadius: 8,
   },
-  buttonText: { color: 'white', fontWeight: '600' },
+  buttonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 16,
+  },
 });

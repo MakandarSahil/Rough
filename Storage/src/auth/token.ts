@@ -1,13 +1,27 @@
+// src/auth/token.ts
 import EncryptedStorage from 'react-native-encrypted-storage';
 
 export const saveToken = async (token: string) => {
-  await EncryptedStorage.setItem('token', token);
+  try {
+    await EncryptedStorage.setItem('token', token);
+  } catch (error) {
+    console.error('Failed to save token:', error);
+  }
 };
 
 export const getToken = async () => {
-  return await EncryptedStorage.getItem('token');
+  try {
+    return await EncryptedStorage.getItem('token');
+  } catch (error) {
+    console.error('Failed to get token:', error);
+    return null;
+  }
 };
 
 export const removeToken = async () => {
-  await EncryptedStorage.removeItem('token');
+  try {
+    await EncryptedStorage.removeItem('token');
+  } catch (error) {
+    console.error('Failed to remove token:', error);
+  }
 };

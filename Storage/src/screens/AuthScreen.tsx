@@ -1,5 +1,5 @@
 // src/screens/AuthScreen.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,33 +7,51 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { useAppDispatch } from '../hooks/useAppDispatch';
-import { loginUser, signupUser } from '../features/auth/authSlice';
-
-type AuthNavProp = NativeStackNavigationProp<RootStackParamList, 'Auth'>;
+import { loginUser, signupUser, clearAuthError } from '../features/auth/authSlice'; // Import clearAuthError
+import { useAppSelector } from '../hooks/useAppSelector'; // Import useAppSelector
 
 export default function AuthScreen() {
-  const dispatch = useAppDispatch();
-  const navigation = useNavigation<AuthNavProp>();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSubmit = async () => {
-    try {
-      if (mode === 'signup') {
-        await dispatch(signupUser({ name, email, password })).unwrap();
-      } else {
-        await dispatch(loginUser({ email, password })).unwrap();
-      }
-    } catch (err: any) {
-      Alert.alert('Error', err.message || 'Something went wrong');
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const dispatch = useAppDispatch();
+  const { loading, error } = useAppSelector((state) => state.auth); // Get loading and error from state
+
+  // Effect to show error alerts when 'error' state changes
+  useEffect(() => {
+    if (error) {
+      Alert.alert('Authentication Error', error, [
+        { text: 'OK', onPress: () => dispatch(clearAuthError()) } // Clear error on dismiss
+      ]);
     }
+  }, [error, dispatch]);
+
+  const handleSubmit = async () => {
+    if (!email || !password || (mode === 'signup' && !name)) {
+      Alert.alert('Input Error', 'Please fill in all fields.');
+      return;
+    }
+
+    if (loading === 'pending') { // Prevent multiple submissions
+      return;
+    }
+
+    if (mode === 'signup') {
+      dispatch(signupUser({ name, email, password }));
+    } else {
+      dispatch(loginUser({ email, password }));
+    }
+    // Navigation is handled by AppNavigator observing isLoggedIn state
   };
 
   return (
@@ -42,39 +60,61 @@ export default function AuthScreen() {
 
       {mode === 'signup' && (
         <TextInput
-          placeholder="Full Name"
-          placeholderTextColor="#94A3B8"
           style={styles.input}
+          placeholder="Name"
+          placeholderTextColor="#888"
           value={name}
           onChangeText={setName}
+          autoCapitalize="words"
+          editable={loading !== 'pending'}
         />
       )}
       <TextInput
-        placeholder="Email"
-        placeholderTextColor="#94A3B8"
         style={styles.input}
+        placeholder="Email"
+        placeholderTextColor="#888"
         value={email}
         onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        editable={loading !== 'pending'}
       />
       <TextInput
-        placeholder="Password"
-        placeholderTextColor="#94A3B8"
-        secureTextEntry
         style={styles.input}
+        placeholder="Password"
+        placeholderTextColor="#888"
+        secureTextEntry
         value={password}
         onChangeText={setPassword}
+        editable={loading !== 'pending'}
       />
 
-      <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-        <Text style={styles.buttonText}>
-          {mode === 'login' ? 'Login' : 'Sign Up'}
-        </Text>
+      <TouchableOpacity
+        onPress={handleSubmit}
+        style={styles.button}
+        disabled={loading === 'pending'}
+      >
+        {loading === 'pending' ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>
+            {mode === 'login' ? 'Login' : 'Sign Up'}
+          </Text>
+        )}
       </TouchableOpacity>
 
       <TouchableOpacity
-        onPress={() => setMode(mode === 'login' ? 'signup' : 'login')}
+        onPress={() => {
+          setMode(mode === 'login' ? 'signup' : 'login');
+          dispatch(clearAuthError()); // Clear error when switching mode
+          setName('');
+          setEmail('');
+          setPassword('');
+        }}
+        style={styles.switchButton}
+        disabled={loading === 'pending'}
       >
-        <Text style={styles.toggleText}>
+        <Text style={styles.switchText}>
           {mode === 'login'
             ? "Don't have an account? Sign Up"
             : 'Already have an account? Login'}
@@ -83,7 +123,8 @@ export default function AuthScreen() {
 
       <TouchableOpacity
         onPress={() => navigation.navigate('Guest')}
-        style={styles.skipBottom}
+        style={styles.skipBtn}
+        disabled={loading === 'pending'}
       >
         <Text style={styles.skipText}>Skip →</Text>
       </TouchableOpacity>
@@ -94,37 +135,52 @@ export default function AuthScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
     padding: 24,
+    backgroundColor: '#0F172A',
     justifyContent: 'center',
   },
-  skipBtn: { position: 'absolute', top: 20, right: 20 },
-  skipText: { color: '#38BDF8', fontWeight: '600', fontSize: 16 },
   title: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 28,
     color: 'white',
-    marginBottom: 24,
     textAlign: 'center',
+    marginBottom: 30,
+    fontWeight: 'bold',
   },
   input: {
     backgroundColor: '#1E293B',
     color: 'white',
-    padding: 14,
-    borderRadius: 8,
-    marginBottom: 12,
+    padding: 16,
+    borderRadius: 10,
+    marginBottom: 15,
+    fontSize: 16,
   },
   button: {
     backgroundColor: '#4F46E5',
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 10,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 10,
   },
-  buttonText: { color: 'white', fontWeight: '600' },
-  toggleText: { textAlign: 'center', marginTop: 16, color: '#CBD5E1' },
-  skipBottom: {
-    marginTop: 32,
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  switchButton: {
+    marginTop: 20,
+  },
+  switchText: {
+    color: '#CBD5E1',
+    textAlign: 'center',
+    fontSize: 15,
+  },
+  skipBtn: {
+    marginTop: 40,
     alignItems: 'center',
+  },
+  skipText: {
+    color: '#60A5FA',
+    fontSize: 17,
+    fontWeight: 'bold',
   },
 });

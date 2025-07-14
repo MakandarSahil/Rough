@@ -1,17 +1,13 @@
+// App.tsx
 import React from 'react';
 import { Provider } from 'react-redux';
 import { store } from './src/store';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import AppNavigator from './src/AppNavigator';
-
-const queryClient = new QueryClient();
+import AppNavigator from './src/navigation/AppNavigator';
 
 export default function App() {
   return (
     <Provider store={store}>
-      <QueryClientProvider client={queryClient}>
-        <AppNavigator />
-      </QueryClientProvider>
+      <AppNavigator />
     </Provider>
   );
 }

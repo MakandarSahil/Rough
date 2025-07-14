@@ -6,17 +6,13 @@ import { useAppSelector } from '../hooks/useAppSelector';
 import { logoutUser } from '../features/auth/authSlice';
 
 export default function HomeScreen() {
+  const user = useAppSelector((state) => state.auth.user);
   const dispatch = useAppDispatch();
-  const user = useAppSelector(state => state.auth.user);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>👋 Welcome, {user?.name}</Text>
-
-      <View style={styles.card}>
-        <Text style={styles.label}>Email:</Text>
-        <Text style={styles.value}>{user?.email}</Text>
-      </View>
+      <Text style={styles.title}>Welcome, {user?.name || 'User'}!</Text>
+      {user?.email && <Text style={styles.subtitle}>Email: {user.email}</Text>}
 
       <TouchableOpacity
         style={styles.logoutBtn}
@@ -31,24 +27,33 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 24,
-    backgroundColor: '#0F172A',
     justifyContent: 'center',
-  },
-  title: { fontSize: 24, color: '#FFF', fontWeight: 'bold', marginBottom: 20 },
-  card: {
-    backgroundColor: '#1E293B',
+    alignItems: 'center',
+    backgroundColor: '#0F172A',
     padding: 20,
-    borderRadius: 12,
-    marginBottom: 24,
   },
-  label: { color: '#94A3B8', fontSize: 16, marginBottom: 6 },
-  value: { color: '#FFF', fontSize: 18, fontWeight: '500' },
+  title: {
+    fontSize: 28,
+    color: 'white',
+    fontWeight: 'bold',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 18,
+    color: '#94A3B8',
+    marginBottom: 30,
+    textAlign: 'center',
+  },
   logoutBtn: {
     backgroundColor: '#EF4444',
-    padding: 14,
-    borderRadius: 10,
-    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 25,
+    borderRadius: 8,
   },
-  logoutText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
+  logoutText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
 });

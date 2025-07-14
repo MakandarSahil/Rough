@@ -1,6 +1,6 @@
-// navigation/types.ts
+// src/navigation/types.ts
 export type RootStackParamList = {
-  Home: undefined;
   Auth: undefined;
+  Home: undefined;
   Guest: undefined;
 };
