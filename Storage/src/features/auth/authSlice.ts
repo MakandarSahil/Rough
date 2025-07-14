@@ -1,9 +1,50 @@
+// ✅ authSlice.ts
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { loginApi, signupApi, getUserProfileApi } from '../../api/authApi';
 import { saveToken, removeToken } from '../../auth/token';
+
+export const loginUser = createAsyncThunk(
+  'auth/login',
+  async ({ email, password }: { email: string; password: string }) => {
+    const { token, user } = await loginApi(email, password);
+    await saveToken(token);
+    return user;
+  },
+);
+
+export const signupUser = createAsyncThunk(
+  'auth/signup',
+  async ({
+    name,
+    email,
+    password,
+  }: {
+    name: string;
+    email: string;
+    password: string;
+  }) => {
+    const { token, user } = await signupApi(name, email, password);
+    await saveToken(token);
+    return user;
+  },
+);
+
+export const fetchUser = createAsyncThunk('auth/fetchUser', async () => {
+  return await getUserProfileApi();
+});
+
+export const logoutUser = createAsyncThunk('auth/logout', async () => {
+  await removeToken();
+});
+
+interface User {
+  name: string;
+  email: string;
+}
 
 interface AuthState {
   isLoggedIn: boolean;
-  user: any;
+  user: User | null;
   loading: boolean;
   error: string | null;
 }
@@ -15,43 +56,25 @@ const initialState: AuthState = {
   error: null,
 };
 
-// Mock login
-export const loginUser = createAsyncThunk(
-  'auth/login',
-  async ({ email, password }: { email: string; password: string }) => {
-    // simulate API
-    await new Promise((res) => setTimeout(res, 1000));
-    const token = 'mock-token';
-    const user = { id: 1, name: 'Sahil', email };
-    await saveToken(token);
-    return { user };
-  }
-);
-
-export const logoutUser = createAsyncThunk('auth/logout', async () => {
-  await removeToken();
-});
-
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {},
-  extraReducers(builder) {
+  extraReducers: builder => {
     builder
-      .addCase(loginUser.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
       .addCase(loginUser.fulfilled, (state, action) => {
-        state.loading = false;
         state.isLoggedIn = true;
-        state.user = action.payload.user;
+        state.user = action.payload;
       })
-      .addCase(loginUser.rejected, (state, action) => {
-        state.loading = false;
-        state.error = 'Login failed';
+      .addCase(signupUser.fulfilled, (state, action) => {
+        state.isLoggedIn = true;
+        state.user = action.payload;
       })
-      .addCase(logoutUser.fulfilled, (state) => {
+      .addCase(fetchUser.fulfilled, (state, action) => {
+        state.isLoggedIn = true;
+        state.user = action.payload;
+      })
+      .addCase(logoutUser.fulfilled, state => {
         state.isLoggedIn = false;
         state.user = null;
       });

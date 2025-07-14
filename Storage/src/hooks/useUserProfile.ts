@@ -5,7 +5,7 @@ interface User {
 }
 
 export const fetchUser = async (): Promise<{ name: string; email: string }> => {
-  await new Promise((res) => setTimeout(res, 1000));
+  await new Promise(res => setTimeout(res, 1000));
   return { name: 'Sahil', email: 'sahil@example.com' };
 };
 
