@@ -2,7 +2,7 @@ import axios from 'axios';
 import { getToken } from '../auth/token';
 
 const API = axios.create({
-  baseURL: 'http://your-backend-url.com/api',
+  baseURL: 'http://192.168.50.12:3000',
   timeout: 5000,
 });
 

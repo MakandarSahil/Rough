@@ -6,13 +6,13 @@ const router = Router();
 
 router.route('/register').post(async (req, res) => {
   try {
-    const {name, email, number, password} = req.body;
+    const {name, email, password} = req.body;
     const user = await User.create({
       name,
       email,
-      number,
       password,
     });
+    user.password = "";
     res.status(201).json({msg: 'User Registerd Succefully', data: user});
   } catch (error) {
     console.log(error);

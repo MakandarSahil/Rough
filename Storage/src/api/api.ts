@@ -2,7 +2,7 @@ import axios from 'axios';
 import { getToken } from '../auth/token';
 
 const api = axios.create({
-  baseURL: 'https://your-api.com', // or mock server
+  baseURL: 'http://192.168.50.12:3000', // or mock server
 });
 
 api.interceptors.request.use(async (config) => {

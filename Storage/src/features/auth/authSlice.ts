@@ -4,7 +4,8 @@ import { getUserApi, loginApi, signupApi } from '../../api/authApi';
 import { saveToken, removeToken, getToken } from '../../auth/token';
 import { ApiError } from '../../utils/errors'; // Import ApiError
 
-interface User {
+export interface User {
+  id: string;
   name: string;
   email: string;
 }
@@ -31,9 +32,9 @@ export const loginUser = createAsyncThunk(
     { rejectWithValue },
   ) => {
     try {
-      const { token, user } = await loginApi(email, password);
-      await saveToken(token);
-      return user;
+      const { accessToken, refreshToken, userId } = await loginApi(email, password);
+      await saveToken(refreshToken);
+      return userId;
     } catch (error) {
       const errorMessage =
         error instanceof ApiError
@@ -55,8 +56,7 @@ export const signupUser = createAsyncThunk(
     { rejectWithValue },
   ) => {
     try {
-      const { token, user } = await signupApi(name, email, password);
-      await saveToken(token);
+      const { msg, user } = await signupApi(name, email, password);
       return user;
     } catch (error) {
       const errorMessage =
