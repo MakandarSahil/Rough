@@ -15,6 +15,7 @@ import { RootStackParamList } from '../navigation/types';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { loginUser, signupUser, clearAuthError } from '../features/auth/authSlice'; // Import clearAuthError
 import { useAppSelector } from '../hooks/useAppSelector'; // Import useAppSelector
+import { getToken } from '../auth/token';
 
 export default function AuthScreen() {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -34,6 +35,8 @@ export default function AuthScreen() {
         { text: 'OK', onPress: () => dispatch(clearAuthError()) } // Clear error on dismiss
       ]);
     }
+    console.log(getToken());
+    console.log()
   }, [error, dispatch]);
 
   const handleSubmit = async () => {

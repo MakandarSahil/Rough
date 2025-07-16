@@ -13,7 +13,6 @@ export interface User {
 interface AuthState {
   isLoggedIn: boolean;
   user: User | null;
-  accessToken: string | null;
   loading: 'idle' | 'pending' | 'succeeded' | 'failed';
   error: string | null;
 }
@@ -21,7 +20,6 @@ interface AuthState {
 const initialState: AuthState = {
   isLoggedIn: false,
   user: null,
-  accessToken: null,
   loading: 'idle',
   error: null,
 };
@@ -118,7 +116,6 @@ const authSlice = createSlice({
         state.loading = 'succeeded';
         state.isLoggedIn = true;
         state.user = action.payload.userId;
-        state.accessToken = action.payload.accessToken;
         state.error = null;
       })
       .addCase(loginUser.rejected, (state, action: PayloadAction<any>) => {
@@ -135,7 +132,7 @@ const authSlice = createSlice({
       .addCase(signupUser.fulfilled, (state, action) => {
         state.loading = 'succeeded';
         state.isLoggedIn = true;
-        state.user = action.payload;
+        state.user = action.payload.user;
         state.error = null;
       })
       .addCase(signupUser.rejected, (state, action: PayloadAction<any>) => {
