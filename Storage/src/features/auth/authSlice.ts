@@ -13,6 +13,7 @@ export interface User {
 interface AuthState {
   isLoggedIn: boolean;
   user: User | null;
+  accessToken: string | null;
   loading: 'idle' | 'pending' | 'succeeded' | 'failed';
   error: string | null;
 }
@@ -20,6 +21,7 @@ interface AuthState {
 const initialState: AuthState = {
   isLoggedIn: false,
   user: null,
+  accessToken: null,
   loading: 'idle',
   error: null,
 };
@@ -34,7 +36,7 @@ export const loginUser = createAsyncThunk(
     try {
       const { accessToken, refreshToken, userId } = await loginApi(email, password);
       await saveToken(refreshToken);
-      return userId;
+      return {accessToken, userId};
     } catch (error) {
       const errorMessage =
         error instanceof ApiError
@@ -57,7 +59,7 @@ export const signupUser = createAsyncThunk(
   ) => {
     try {
       const { msg, user } = await signupApi(name, email, password);
-      return user;
+      return {msg, user};
     } catch (error) {
       const errorMessage =
         error instanceof ApiError
@@ -115,7 +117,8 @@ const authSlice = createSlice({
       .addCase(loginUser.fulfilled, (state, action) => {
         state.loading = 'succeeded';
         state.isLoggedIn = true;
-        state.user = action.payload;
+        state.user = action.payload.userId;
+        state.accessToken = action.payload.accessToken;
         state.error = null;
       })
       .addCase(loginUser.rejected, (state, action: PayloadAction<any>) => {
