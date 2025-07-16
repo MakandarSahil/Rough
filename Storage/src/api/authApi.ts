@@ -4,7 +4,7 @@ import EncryptedStorage from 'react-native-encrypted-storage';
 import { ApiError } from '../utils/errors'; // Import the custom error class
 import { User } from '../features/auth/authSlice';
 
-const API_BASE = 'http://192.168.137.106:3000'; // <--- IMPORTANT: Replace with your actual Node.js backend URL
+const API_BASE = 'http://192.168.137.49:3000'; // <--- IMPORTANT: Replace with your actual Node.js backend URL
 
 // Helper to get authorization headers
 const getAuthHeaders = async () => {

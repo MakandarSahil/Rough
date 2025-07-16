@@ -1,8 +1,8 @@
 // src/features/auth/authSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { getUserApi, loginApi, signupApi } from '../../api/authApi';
-import { saveToken, removeToken, getToken } from '../../auth/token';
-import { ApiError } from '../../utils/errors'; // Import ApiError
+import { TokenService } from '../../hooks/useToken';
+import { ApiError } from '../../utils/errors';
 
 export interface User {
   id: string;
@@ -33,8 +33,8 @@ export const loginUser = createAsyncThunk(
   ) => {
     try {
       const { accessToken, refreshToken, userId } = await loginApi(email, password);
-      await saveToken(refreshToken);
-      return {accessToken, userId};
+      await TokenService.setTokens(accessToken, refreshToken);
+      return { accessToken, userId };
     } catch (error) {
       const errorMessage =
         error instanceof ApiError
@@ -48,16 +48,12 @@ export const loginUser = createAsyncThunk(
 export const signupUser = createAsyncThunk(
   'auth/signup',
   async (
-    {
-      name,
-      email,
-      password,
-    }: { name: string; email: string; password: string },
+    { name, email, password }: { name: string; email: string; password: string },
     { rejectWithValue },
   ) => {
     try {
       const { msg, user } = await signupApi(name, email, password);
-      return {msg, user};
+      return { msg, user };
     } catch (error) {
       const errorMessage =
         error instanceof ApiError
@@ -72,17 +68,14 @@ export const fetchUser = createAsyncThunk(
   'auth/fetchUser',
   async (_, { rejectWithValue }) => {
     try {
-      const token = await getToken();
-      if (!token) {
-        // No token, so not logged in. This is not an error but a state.
-        // We reject to ensure the `rejected` case is hit to clear state.
+      const { refresh_token } = await TokenService.getTokens();
+      if (!refresh_token) {
         return rejectWithValue('No authentication token found.');
       }
       const user = await getUserApi();
       return user;
     } catch (error) {
-      // If getUserApi fails (e.g., token expired/invalid), remove token and clear state.
-      await removeToken();
+      await TokenService.clearTokens();
       const errorMessage =
         error instanceof ApiError
           ? error.message
@@ -93,14 +86,13 @@ export const fetchUser = createAsyncThunk(
 );
 
 export const logoutUser = createAsyncThunk('auth/logout', async () => {
-  await removeToken();
+  await TokenService.clearTokens();
 });
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    // You can add a reducer here to clear the error state manually if needed
     clearAuthError: state => {
       state.error = null;
     },
@@ -110,12 +102,12 @@ const authSlice = createSlice({
       // Login
       .addCase(loginUser.pending, state => {
         state.loading = 'pending';
-        state.error = null; // Clear previous errors
+        state.error = null;
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.loading = 'succeeded';
         state.isLoggedIn = true;
-        state.user = action.payload.userId;
+        state.user = { id: action.payload.userId, name: '', email: '' }; // Adjust according to your actual user data
         state.error = null;
       })
       .addCase(loginUser.rejected, (state, action: PayloadAction<any>) => {
@@ -127,7 +119,7 @@ const authSlice = createSlice({
       // Signup
       .addCase(signupUser.pending, state => {
         state.loading = 'pending';
-        state.error = null; // Clear previous errors
+        state.error = null;
       })
       .addCase(signupUser.fulfilled, (state, action) => {
         state.loading = 'succeeded';
@@ -141,10 +133,10 @@ const authSlice = createSlice({
         state.user = null;
         state.error = action.payload || 'Signup failed. Please try again.';
       })
-      // Fetch User (on app load/refresh)
+      // Fetch User
       .addCase(fetchUser.pending, state => {
         state.loading = 'pending';
-        state.error = null; // Clear previous errors
+        state.error = null;
       })
       .addCase(fetchUser.fulfilled, (state, action) => {
         state.loading = 'succeeded';
@@ -156,18 +148,17 @@ const authSlice = createSlice({
         state.loading = 'failed';
         state.isLoggedIn = false;
         state.user = null;
-        state.error =
-          action.payload || 'Session expired or invalid. Please log in.';
+        state.error = action.payload || 'Session expired or invalid. Please log in.';
       })
       // Logout
       .addCase(logoutUser.fulfilled, state => {
         state.isLoggedIn = false;
         state.user = null;
         state.loading = 'idle';
-        state.error = null; // Clear any errors on logout
+        state.error = null;
       });
   },
 });
 
-export const { clearAuthError } = authSlice.actions; // Export action to clear error
+export const { clearAuthError } = authSlice.actions;
 export default authSlice.reducer;
