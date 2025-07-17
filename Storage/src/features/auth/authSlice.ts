@@ -11,6 +11,7 @@ export interface User {
 }
 
 interface AuthState {
+  isVerified: boolean;
   isLoggedIn: boolean;
   user: User | null;
   loading: 'idle' | 'pending' | 'succeeded' | 'failed';
@@ -18,6 +19,7 @@ interface AuthState {
 }
 
 const initialState: AuthState = {
+  isVerified: false,
   isLoggedIn: false,
   user: null,
   loading: 'idle',
@@ -66,24 +68,22 @@ export const signupUser = createAsyncThunk(
 
 export const fetchUser = createAsyncThunk(
   'auth/fetchUser',
-  async (_, { rejectWithValue }) => {
+  async (_, thunkAPI) => {
     try {
-      const { refresh_token } = await TokenService.getTokens();
-      if (!refresh_token) {
-        return rejectWithValue('No authentication token found.');
+      const tokens = await TokenService.getTokens();
+      if (!tokens?.refresh_token) {
+        // Even if no token, mark as failed to avoid infinite loading
+        return thunkAPI.rejectWithValue('No refresh token found');
       }
+
       const user = await getUserApi();
       return user;
-    } catch (error) {
-      await TokenService.clearTokens();
-      const errorMessage =
-        error instanceof ApiError
-          ? error.message
-          : 'Failed to retrieve user session.';
-      return rejectWithValue(errorMessage);
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.message);
     }
-  },
+  }
 );
+
 
 export const logoutUser = createAsyncThunk('auth/logout', async () => {
   await TokenService.clearTokens();
@@ -107,12 +107,14 @@ const authSlice = createSlice({
       .addCase(loginUser.fulfilled, (state, action) => {
         state.loading = 'succeeded';
         state.isLoggedIn = true;
-        state.user = { id: action.payload.userId, name: '', email: '' }; // Adjust according to your actual user data
+        state.isVerified = true;
+        state.user = { id: action.payload.userId, name: '', email: '' };
         state.error = null;
       })
       .addCase(loginUser.rejected, (state, action: PayloadAction<any>) => {
         state.loading = 'failed';
         state.isLoggedIn = false;
+        state.isVerified = false;
         state.user = null;
         state.error = action.payload || 'Login failed. Please try again.';
       })
@@ -124,12 +126,14 @@ const authSlice = createSlice({
       .addCase(signupUser.fulfilled, (state, action) => {
         state.loading = 'succeeded';
         state.isLoggedIn = true;
+        state.isVerified = true;
         state.user = action.payload.user;
         state.error = null;
       })
       .addCase(signupUser.rejected, (state, action: PayloadAction<any>) => {
         state.loading = 'failed';
         state.isLoggedIn = false;
+        state.isVerified = false;
         state.user = null;
         state.error = action.payload || 'Signup failed. Please try again.';
       })
@@ -141,18 +145,20 @@ const authSlice = createSlice({
       .addCase(fetchUser.fulfilled, (state, action) => {
         state.loading = 'succeeded';
         state.isLoggedIn = true;
-        state.user = action.payload;
+        state.isVerified = action.payload.isVerified;
         state.error = null;
       })
       .addCase(fetchUser.rejected, (state, action: PayloadAction<any>) => {
         state.loading = 'failed';
         state.isLoggedIn = false;
+        state.isVerified = false;
         state.user = null;
         state.error = action.payload || 'Session expired or invalid. Please log in.';
       })
       // Logout
       .addCase(logoutUser.fulfilled, state => {
         state.isLoggedIn = false;
+        state.isVerified = false;
         state.user = null;
         state.loading = 'idle';
         state.error = null;

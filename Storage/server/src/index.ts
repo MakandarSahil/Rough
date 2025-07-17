@@ -1,13 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import express, {NextFunction, Request, Response} from 'express';
-import {ConnectDB} from './db';
+import {ConnectDB} from './mongo';
 import auth from './auth.controller';
 import cors from 'cors';
+import { connectRedis } from './redis';
 
 const app = express();
 
 function StartServer() {
-  ConnectDB()
+  Promise.all([ConnectDB(), connectRedis()])
     .then(() => {
       app.use(express.json());
       app.use(auth);
@@ -26,7 +27,7 @@ function StartServer() {
       app.get('/', (req, res) => res.send('hello'));
 
       app.listen(3000, '0.0.0.0', () => {
-        console.log('server started at http://localhost3000');
+        console.log('server started at http://localhost:3000');
       });
     })
     .catch(err => {

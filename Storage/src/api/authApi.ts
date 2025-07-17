@@ -1,20 +1,15 @@
 // src/api/authApi.ts
-import axios from 'axios';
-import EncryptedStorage from 'react-native-encrypted-storage';
-import { ApiError } from '../utils/errors'; // Import the custom error class
+import axios from 'axios'; // Import the axios library
+import api from './api'; // Import the configured axios instance
+import { TokenService } from '../hooks/useToken';
+import { ApiError } from '../utils/errors';
 import { User } from '../features/auth/authSlice';
 
-const API_BASE = 'http://192.168.137.49:3000'; // <--- IMPORTANT: Replace with your actual Node.js backend URL
-
-// Helper to get authorization headers
-const getAuthHeaders = async () => {
-  const token = await EncryptedStorage.getItem('token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
+// Note: We no longer need API_BASE or getAuthHeaders since they're handled by the api service
 
 export const loginApi = async (email: string, password: string) => {
   try {
-    const res = await axios.post(`${API_BASE}/login`, { email, password });
+    const res = await api.post('/login', { email, password });
     if (!res.data.accessToken || !res.data.id) {
       throw new ApiError('Invalid response from server during login');
     }
@@ -25,7 +20,7 @@ export const loginApi = async (email: string, password: string) => {
       userId: res.data.id 
     };
   } catch (err: any) {
-    console.log('heloo login error', err);
+    console.log('login error', err);
     if (axios.isAxiosError(err) && err.response) {
       throw new ApiError(
         err.response.data.message || 'Login failed',
@@ -36,14 +31,38 @@ export const loginApi = async (email: string, password: string) => {
   }
 };
 
+export const refreshAccessToken = async (): Promise<string | null> => {
+  try {
+    const { refresh_token } = await TokenService.getTokens();
+    if (!refresh_token) throw new ApiError('No refresh token available');
+
+    const res = await api.post('/refresh', {
+      refreshToken: refresh_token,
+    });
+
+    const newAccessToken = res.data.accessToken;
+    if (!newAccessToken) {
+      throw new ApiError('Failed to get new access token from refresh');
+    }
+
+    // Save the new access token, keep existing refresh token
+    await TokenService.setTokens(newAccessToken, refresh_token);
+
+    return newAccessToken;
+  } catch (err: any) {
+    console.error('Error refreshing token:', err);
+    await TokenService.clearTokens(); // optional: clear tokens on failure
+    throw err;
+  }
+};
+
 export const signupApi = async (
   name: string,
   email: string,
   password: string,
 ): Promise<{ msg: string; user: User }> => {
   try {
-    console.log(name, email, password);
-    const res = await axios.post(`${API_BASE}/register`, {
+    const res = await api.post('/register', {
       name,
       email,
       password,
@@ -57,7 +76,7 @@ export const signupApi = async (
       user: res.data.data
     };
   } catch (err: any) {
-    console.log('heloo signup error', err);
+    console.log('signup error', err);
     if (axios.isAxiosError(err) && err.response) {
       throw new ApiError(
         err.response.data.message || 'Signup failed',
@@ -72,27 +91,29 @@ export const signupApi = async (
 
 export const getUserApi = async () => {
   try {
-    const headers = await getAuthHeaders();
-    if (!headers.Authorization) {
-      throw new ApiError('Authentication token missing. Please log in.', 401);
+    const res = await api.get('/me');
+    
+    if (!res.data.msg || res.data.isVerified === undefined) {
+      throw new ApiError('Invalid response format from server');
     }
-
-    const res = await axios.get(`${API_BASE}/me`, { headers });
-    if (!res.data.name || !res.data.email) {
-      throw new ApiError('Invalid user data received from server');
+    
+    if (!res.data.isVerified) {
+      throw new ApiError(res.data.msg || 'User verification failed', 401);
     }
-    return res.data;
+    
+    return {
+      isVerified: res.data.isVerified
+    };
   } catch (err: any) {
-    if (axios.isAxiosError(err) && err.response) {
-      // Specifically handle 401/403 for token issues
-      if (err.response.status === 401 || err.response.status === 403) {
+    if (axios.isAxiosError(err) && err.response) { // Use axios.isAxiosError
+      if (err.response.status === 401) {
         throw new ApiError(
-          'Your session has expired. Please log in again.',
+          err.response.data.msg || 'Your session has expired. Please log in again.',
           err.response.status,
         );
       }
       throw new ApiError(
-        err.response.data.message || 'Failed to fetch user data',
+        err.response.data.msg || 'Failed to fetch user data',
         err.response.status,
       );
     }
