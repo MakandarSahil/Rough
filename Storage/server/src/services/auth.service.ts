@@ -1,5 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { User } from '../models/user.model';
+import redisClient from '../config/redis.config';
+import { getUuId } from '../utils/uuid';
 
 class AuthService {
   public async register(name: string, email: string, password: string) {
@@ -19,11 +21,16 @@ class AuthService {
       throw { status: 400, message: 'Password is incorrect' };
     }
 
-    const accessToken = jwt.sign({ id: user._id }, '1234', { expiresIn: '1m' });
-    const refreshToken = jwt.sign({ id: user._id }, '1234', { expiresIn: '30d' });
+    const at_jti = getUuId();
+    const rt_jti = getUuId();
+
+    const accessToken = jwt.sign({ id: user._id, jti: at_jti }, '1234', { expiresIn: '15m' });
+    const refreshToken = jwt.sign({ id: user._id, jti: rt_jti }, '1234', { expiresIn: '30d' });
 
     user.refreshToken = refreshToken;
     await user.save();
+    await redisClient.set(`refresh_token:${user._id}:`, rt_jti, { EX: 30 * 24 * 60 * 60 });
+    await redisClient.set(`access_token:${user._id}:`, rt_jti, { EX: 15 * 60 });
 
     return {
       msg: 'Login successful',

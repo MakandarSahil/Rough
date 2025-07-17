@@ -1,12 +1,19 @@
-import { Document } from 'mongoose';
-import { IUser } from '../interfaces/user.interface';
+import 'express';
+
+type Role = 'admin' | 'customer' | 'guest';
+
+export type JwtPayload = {
+    jti: string;
+    userId: string;
+    role: Role[];
+    iat?: number;
+    exp?: number;
+};
 
 declare global {
-  namespace Express {
-    interface Request {
-      user?: Document & IUser; // Simplified to just Document + IUser
+    namespace Express {
+        interface Request {
+            user?: JwtPayload;
+        }
     }
-  }
 }
-
-export {};
