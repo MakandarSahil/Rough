@@ -12,7 +12,7 @@ class AuthService {
 
   public async login(email: string, password: string) {
     const user = await User.findOne({ email });
-    
+
     if (!user) {
       throw { status: 401, message: 'User not found' };
     }
@@ -21,23 +21,36 @@ class AuthService {
       throw { status: 400, message: 'Password is incorrect' };
     }
 
-    const at_jti = getUuId();
     const rt_jti = getUuId();
 
-    const accessToken = jwt.sign({ id: user._id, jti: at_jti }, '1234', { expiresIn: '15m' });
-    const refreshToken = jwt.sign({ id: user._id, jti: rt_jti }, '1234', { expiresIn: '30d' });
+    const accessToken = jwt.sign({ userId: user._id }, '1234', {
+      expiresIn: '15m',
+    });
+    const refreshToken = jwt.sign({ userId: user._id, jti: rt_jti }, '1234', {
+      expiresIn: '30d',
+    });
 
     user.refreshToken = refreshToken;
     await user.save();
-    await redisClient.set(`refresh_token:${user._id}:`, rt_jti, { EX: 30 * 24 * 60 * 60 });
-    await redisClient.set(`access_token:${user._id}:`, rt_jti, { EX: 15 * 60 });
+    await redisClient.set(`refresh_token:${user._id}:`, rt_jti, {
+      EX: 30 * 24 * 60 * 60,
+    });
 
     return {
       msg: 'Login successful',
       accessToken,
       refreshToken,
-      id: user._id,
+      id: user._id as string,
     };
+  }
+
+  private verifyJwt(token: string, secret: string): Promise<jwt.JwtPayload> {
+    return new Promise((resolve, reject) => {
+      jwt.verify(token, secret, (err, decoded) => {
+        if (err) return reject(err);
+        resolve(decoded as jwt.JwtPayload);
+      });
+    });
   }
 
   public async refreshToken(refreshToken: string) {
@@ -45,27 +58,36 @@ class AuthService {
       throw { status: 401, message: 'Refresh token missing' };
     }
 
-    return new Promise((resolve, reject) => {
-      jwt.verify(refreshToken, '1234', async (err: any, decoded: any) => {
-        if (err) {
-          return reject({ status: 403, message: 'Invalid refresh token' });
-        }
+    try {
+      const decoded = await this.verifyJwt(refreshToken, '1234');
 
-        const user = await User.findById(decoded.id);
+      if (!decoded.jti) {
+        throw { status: 400, message: 'Invalid token payload - jti missing' };
+      }
 
+      let storedRtJti = await redisClient.get(`refresh_token:${decoded.jti}`);
+
+      if (!storedRtJti) {
+        const user = await User.findById(decoded.userId);
         if (!user || user.refreshToken !== refreshToken) {
-          return reject({ status: 403, message: 'Unauthorized' });
+          throw { status: 403, message: 'Unauthorized - fallback failed' };
         }
 
-        const newAccessToken = jwt.sign(
-          { id: user._id },
-          '1234',
-          { expiresIn: '1m' }
-        );
+        await redisClient.set(`refresh_token:${decoded.userId}`, decoded.jti, {
+          EX: 30 * 24 * 60 * 60,
+        });
+      }
 
-        resolve(newAccessToken);
+      const jti = getUuId();
+
+      const newAccessToken = jwt.sign({ id: decoded.userId, jti }, '1234', {
+        expiresIn: '15m',
       });
-    });
+
+      return newAccessToken;
+    } catch (err) {
+      throw { status: 403, message: 'Invalid or expired refresh token' };
+    }
   }
 }
 

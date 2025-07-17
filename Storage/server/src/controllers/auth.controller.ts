@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import AuthService from '../services/auth.service';
-import { JwtPayload } from '../types/global';
+// import { JwtPayload } from '../types/global';
 import { User } from '../models/user.model';
 
 class AuthController {
@@ -87,6 +87,7 @@ class AuthController {
       const user = await User.findById(userPayload.userId)
         .select('-password -refreshToken -__v')
         .lean();
+
 
       if (!user) {
         return res.status(404).json({ msg: 'User not found' });

@@ -4,7 +4,8 @@ import { refreshAccessToken } from './authApi';
 import { ApiError } from '../utils/errors';
 import { TokenService } from '../hooks/useToken';
 
-const API_BASE_URL = 'http://192.168.137.206:3000'; // adjust as needed
+// const API_BASE_URL = 'http://192.168.137.206:3000'; // utakrsh laptop
+const API_BASE_URL = 'http://192.168.1.8:3000'; // suyash wifi
 
 const api = axios.create({
   baseURL: API_BASE_URL,

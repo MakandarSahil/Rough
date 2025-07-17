@@ -8,6 +8,7 @@ const authController = new AuthController();
 router.post('/register', authController.register);
 router.post('/login', authController.login);
 router.get('/me', authenticate, authController.getMe);
+// here add middleware for authenticating refresh token before hitting to the controller 
 router.post('/refresh', authController.refreshToken);
 
 export default router;
