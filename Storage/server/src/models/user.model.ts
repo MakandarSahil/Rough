@@ -1,12 +1,5 @@
-import mongoose, { Document } from 'mongoose';
-
-interface IUser extends Document {
-  name: string;
-  email: string;
-  number: string;
-  password: string;
-  refreshToken: string;
-}
+import mongoose from 'mongoose';
+import { IUser } from '../interfaces/user.interface';
 
 const userSchema = new mongoose.Schema<IUser>(
   {

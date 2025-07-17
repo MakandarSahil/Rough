@@ -5,7 +5,7 @@ export const connectRedis = async () => {
     const url = 'redis://localhost:6379';
     const client = createClient({ url });
 
-    client.on('error', (err:any) => {
+    client.on('error', (err: any) => {
       console.error('Redis Client Error', err);
     });
 
