@@ -31,6 +31,34 @@ export const loginApi = async (email: string, password: string) => {
   }
 };
 
+export const googleLoginApi = async (idToken: string) => {
+  try {
+    const res = await api.post('/auth/google', { idToken });
+
+    if (!res.data.accessToken || !res.data.id) {
+      throw new ApiError('Invalid response from server during Google login');
+    }
+
+    console.log(res);
+
+    return {
+      msg: res.data.msg,
+      accessToken: res.data.accessToken,
+      refreshToken: res.data.refreshToken,
+      userId: res.data.id
+    };
+  } catch (err: any) {
+    console.log('Google login error', err);
+    if (axios.isAxiosError(err) && err.response) {
+      throw new ApiError(
+        err.response.data.message || 'Google Login failed',
+        err.response.status
+      );
+    }
+    throw new ApiError(err.message || 'An unknown error occurred during Google login');
+  }
+};
+
 export const refreshAccessToken = async (): Promise<string | null> => {
   try {
     const { refresh_token } = await TokenService.getTokens();

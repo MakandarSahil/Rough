@@ -13,9 +13,15 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { useAppDispatch } from '../hooks/useAppDispatch';
-import { loginUser, signupUser, clearAuthError } from '../features/auth/authSlice'; // Import clearAuthError
+import {
+  loginUser,
+  signupUser,
+  clearAuthError,
+} from '../features/auth/authSlice'; // Import clearAuthError
 import { useAppSelector } from '../hooks/useAppSelector'; // Import useAppSelector
 import { getToken } from '../auth/token';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { googleLoginUser } from '../features/auth/authSlice';
 
 export default function AuthScreen() {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -26,17 +32,17 @@ export default function AuthScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const dispatch = useAppDispatch();
-  const { loading, error } = useAppSelector((state) => state.auth); // Get loading and error from state
+  const { loading, error } = useAppSelector(state => state.auth); // Get loading and error from state
 
   // Effect to show error alerts when 'error' state changes
   useEffect(() => {
     if (error) {
       Alert.alert('Authentication Error', error, [
-        { text: 'OK', onPress: () => dispatch(clearAuthError()) } // Clear error on dismiss
+        { text: 'OK', onPress: () => dispatch(clearAuthError()) }, // Clear error on dismiss
       ]);
     }
     console.log(getToken());
-    console.log()
+    console.log();
   }, [error, dispatch]);
 
   const handleSubmit = async () => {
@@ -45,7 +51,8 @@ export default function AuthScreen() {
       return;
     }
 
-    if (loading === 'pending') { // Prevent multiple submissions
+    if (loading === 'pending') {
+      // Prevent multiple submissions
       return;
     }
 
@@ -55,6 +62,26 @@ export default function AuthScreen() {
       dispatch(loginUser({ email, password }));
     }
     // Navigation is handled by AppNavigator observing isLoggedIn state
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      await GoogleSignin.hasPlayServices();
+      await GoogleSignin.signIn(); // Only signs in, doesn't give token
+
+      const { idToken } = await GoogleSignin.getTokens(); // ✅ Get the ID token here
+      console.log(idToken);
+
+      if (!idToken) {
+        Alert.alert('Error', 'Unable to retrieve ID token from Google');
+        return;
+      }
+
+      dispatch(googleLoginUser(idToken)); // Send token to backend via redux
+    } catch (err) {
+      console.error('Google login error:', err);
+      Alert.alert('Google Sign-In Failed', 'Please try again later.');
+    }
   };
 
   return (
@@ -122,6 +149,14 @@ export default function AuthScreen() {
             ? "Don't have an account? Sign Up"
             : 'Already have an account? Login'}
         </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={handleGoogleLogin}
+        style={[styles.button, { backgroundColor: '#EA4335' }]}
+        disabled={loading === 'pending'}
+      >
+        <Text style={styles.buttonText}>Sign in with Google</Text>
       </TouchableOpacity>
 
       <TouchableOpacity

@@ -1,8 +1,9 @@
 // src/features/auth/authSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { getUserApi, loginApi, signupApi } from '../../api/authApi';
+import { getUserApi, googleLoginApi, loginApi, signupApi } from '../../api/authApi';
 import { TokenService } from '../../hooks/useToken';
 import { ApiError } from '../../utils/errors';
+import { saveToken } from '../../auth/token';
 
 export interface User {
   id: string;
@@ -88,6 +89,19 @@ export const fetchUser = createAsyncThunk(
 export const logoutUser = createAsyncThunk('auth/logout', async () => {
   await TokenService.clearTokens();
 });
+
+export const googleLoginUser = createAsyncThunk(
+  'auth/googleLoginUser',
+  async (idToken: string, { rejectWithValue }) => {
+    try {
+      const res = await googleLoginApi(idToken);
+      await TokenService.setTokens(res.accessToken, res.refreshToken);
+      return res;
+    } catch (err: any) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
 
 const authSlice = createSlice({
   name: 'auth',

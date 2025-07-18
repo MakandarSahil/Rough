@@ -10,5 +10,6 @@ router.post('/login', authController.login);
 router.get('/me', authenticate, authController.getMe);
 // here add middleware for authenticating refresh token before hitting to the controller 
 router.post('/refresh', authController.refreshToken);
+router.get("/google", authController.googleAuth);
 
-export default router;
+export default router;  
