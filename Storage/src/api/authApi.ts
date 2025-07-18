@@ -9,7 +9,7 @@ import { User } from '../features/auth/authSlice';
 
 export const loginApi = async (email: string, password: string) => {
   try {
-    const res = await api.post('/login', { email, password });
+    const res = await api.post('/auth/login', { email, password });
     if (!res.data.accessToken || !res.data.id) {
       throw new ApiError('Invalid response from server during login');
     }
@@ -36,7 +36,7 @@ export const refreshAccessToken = async (): Promise<string | null> => {
     const { refresh_token } = await TokenService.getTokens();
     if (!refresh_token) throw new ApiError('No refresh token available');
 
-    const res = await api.post('/refresh', {
+    const res = await api.post('/auth/refresh', {
       refreshToken: refresh_token,
     });
 
@@ -62,7 +62,7 @@ export const signupApi = async (
   password: string,
 ): Promise<{ msg: string; user: User }> => {
   try {
-    const res = await api.post('/register', {
+    const res = await api.post('/auth/register', {
       name,
       email,
       password,
@@ -91,7 +91,8 @@ export const signupApi = async (
 
 export const getUserApi = async () => {
   try {
-    const res = await api.get('/me');
+    const res = await api.get('/auth/me');
+    console.log(res)
     
     if (!res.data.msg || res.data.isVerified === undefined) {
       throw new ApiError('Invalid response format from server');

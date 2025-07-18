@@ -14,6 +14,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
   try {
     const payload = jwt.verify(token, '1234') as JwtPayload;
     
+    
     req.user = {
       jti: payload.jti,
       userId: payload.userId,

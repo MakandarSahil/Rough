@@ -15,6 +15,7 @@ class AuthController {
    */
   public register = async (req: Request, res: Response): Promise<Response> => {
     try {
+      console.log(req.body);
       const { name, email, password } = req.body;
       
       // Validate required fields
@@ -78,9 +79,10 @@ class AuthController {
   public getMe = async (req: Request, res: Response): Promise<Response> => {
     try {
       const userPayload = req.user;
+      console.log(userPayload)
       
       if (!userPayload) {
-        return res.status(401).json({ msg: 'Unauthorized' });
+        return res.status(401).json({ msg: 'Unauthorized', isVerified: false });
       }
       
       // Fetch fresh user data from database
@@ -88,9 +90,11 @@ class AuthController {
         .select('-password -refreshToken -__v')
         .lean();
 
+        console.log(user);
+
 
       if (!user) {
-        return res.status(404).json({ msg: 'User not found' });
+        return res.status(404).json({ msg: 'User not found', isVerified: false });
       }
 
       return res.status(200).json({ 
@@ -98,7 +102,8 @@ class AuthController {
         user: {
           ...user,
           id: user._id
-        } 
+        },
+        isVerified: true
       });
     } catch (error) {
       console.error('GetMe error:', error);
