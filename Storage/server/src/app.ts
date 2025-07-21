@@ -13,6 +13,7 @@ app.use(cors({ origin: 'http://localhost:8081' }));
 
 // Routes
 app.use('/auth', authRoutes);
+app.use('/noti', authRoutes);
 
 // Error handling middleware
 app.use(errorMiddleware);
