@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">Storage</string>
+    
+    <!-- OneSignal High-Priority Channel Configuration -->
+    <string name="onesignal_channel_id">high_priority_notifications</string>
+    <string name="onesignal_channel_name">High Priority Notifications</string>
+    <string name="onesignal_channel_description">Notifications that pop up immediately</string>
+    <string name="onesignal_channel_importance">5</string>  <!-- 5 = Urgent/Heads-Up -->
+    
+    <!-- Optional: Accent color for notification icons (HEX format, e.g., green) -->
+    <string name="onesignal_notification_accent_color">FF00FF00</string>
 </resources>
