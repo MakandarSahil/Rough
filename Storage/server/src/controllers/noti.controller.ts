@@ -10,7 +10,7 @@ export const sendPushNoti = async(req: Request,res: Response) => {
         const { onesignal_id } = req.body;
         console.log(onesignal_id);
         const response = await axios.post(
-        'https://api.onesignal.com/notifications',
+        'https://api.onesignal.com/notifications?c=push',
         {
             app_id: ONESIGNAL_APP_ID,
             include_player_ids: [onesignal_id],  // replace with real OneSignal ID

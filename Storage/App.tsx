@@ -8,64 +8,77 @@ import { Alert } from 'react-native';
 import axios from 'axios';
 
 export default function App() {
-  const waitUntilSubscribed = async () => {
-    let isSubscribed = false;
-    let retries = 0;
+  const [subscriptionId, setSubscriptionId] = React.useState<string | null>(
+    null,
+  );
 
-    while (!isSubscribed && retries < 5) {
-      const sub = await OneSignal.User.pushSubscription.getOptedInAsync();
-      isSubscribed = sub?.isSubscribed ?? false;
-      console.log('Push Subscription State:', isSubscribed);
+  const checkSubscription = async () => {
+    const isSubscribed =
+      await OneSignal.User.pushSubscription.getOptedInAsync();
+    console.log('Push Subscription State:', isSubscribed);
 
-      if (!isSubscribed) {
-        await new Promise(res => setTimeout(res, 2000)); // wait 2 seconds
-        retries++;
+    const subscriptionId = await OneSignal.User.pushSubscription.getIdAsync();
+    console.log('Subscription ID:', subscriptionId);
+  };
+
+  const setupPushNotifications = async () => {
+    try {
+      // Get the Push Subscription ID (Player ID)
+      const subscriptionId = await OneSignal.User.pushSubscription.getIdAsync();
+      if (!subscriptionId) {
+        throw new Error('Could not get Push Subscription ID');
       }
-    }
+      console.log('Push Subscription ID:', subscriptionId);
+      
+      // Register with your backend using the correct ID
+      const response = await axios.post(
+        'http://192.168.50.34:3000/noti/sendNoti',
+        // Send the correct ID to the backend.
+        // You can keep the key as 'onesignal_id' if your backend expects that.
+        { onesignal_id: subscriptionId }, 
+        { headers: { 'Content-Type': 'application/json' } },
+      );
+      
+      const { externalId } = response.data;
+      console.log('External ID:', externalId);
 
-    if (!isSubscribed) {
-      throw new Error('Device never subscribed. Cannot send notification.');
+      // Optional: Set external ID in OneSignal
+      // This links the OneSignal user to your own user database ID
+      if (externalId) {
+        await OneSignal.login(externalId);
+      }
+    } catch (error) {
+      console.table('Push notification setup error:', error);
+      if (error instanceof Error) {
+        Alert.alert(
+          'Notification Error',
+          'We might not be able to send you notifications.',
+        );
+      }
     }
   };
 
   useEffect(() => {
+    // Initialize OneSignal first
+    checkSubscription();
     OneSignal.Debug.setLogLevel(LogLevel.Verbose);
     OneSignal.initialize('a8739f4c-e910-4903-a466-d32c44a7ede8');
-    OneSignal.Notifications.requestPermission(true);
-    waitUntilSubscribed();
 
-    const setupPushNotifications = async () => {
-      try {
-        // Get OneSignal ID
-        const onesignalId = await OneSignal.User.getOnesignalId();
-        if (!onesignalId) {
-          throw new Error('Could not get OneSignal ID');
-        }
-        console.log('OneSignal ID:', onesignalId);
+    // Set up notification listeners
+    // OneSignal.Notifications.addEventListener('permissionChange', event=> {
+    //   console.log('Permission changed:', event.hasPermission);
+    //   if (event.hasPermission) {
+    //     setupPushNotifications();
+    //   }
+    // });
 
-        // Register with your backend
-        const response = await axios.post(
-          'http://192.168.50.34:3000/noti/sendNoti',
-          { onesignal_id: onesignalId },
-          { headers: { 'Content-Type': 'application/json' } },
-        );
+    // // Request permission (shows native prompt)
+    // OneSignal.Notifications.requestPermission(true).then(response => {
+    //   if (response) {
+    //     setupPushNotifications();
+    //   }
+    // });
 
-        const { externalId } = response.data;
-        console.log('External ID:', externalId);
-
-        // Optional: Set external ID in OneSignal
-        await OneSignal.login(externalId);
-      } catch (error) {
-        console.error('Push notification setup error:', error);
-        // Only show alert for critical errors
-        if (error instanceof Error) {
-          Alert.alert(
-            'Notification Error',
-            'We might not be able to send you notifications',
-          );
-        }
-      }
-    };
 
     setupPushNotifications();
   }, []);
