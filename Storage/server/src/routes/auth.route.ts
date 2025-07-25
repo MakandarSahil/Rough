@@ -14,6 +14,6 @@ router.post('/refresh', authController.refreshToken);
 router.get("/google", authController.googleAuth);
 
 
-router.post('/sendNoti', sendPushNoti);
+router.post('/sendNoti', authenticate, sendPushNoti);
 
-export default router;  
+export default router;

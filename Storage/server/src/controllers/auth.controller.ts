@@ -23,7 +23,6 @@ class AuthController {
    */
   public register = async (req: Request, res: Response): Promise<Response> => {
     try {
-      console.log(req.body);
       const { name, email, password } = req.body;
 
       // Validate required fields
@@ -34,6 +33,7 @@ class AuthController {
       }
 
       const user = await this.authService.register(name, email, password);
+      console.log("register controller: ", user.external_id);
 
       // Remove sensitive data before sending response
       const userResponse = {
@@ -92,7 +92,6 @@ class AuthController {
   public getMe = async (req: Request, res: Response): Promise<Response> => {
     try {
       const userPayload = req.user;
-      console.log(userPayload);
 
       if (!userPayload) {
         return res.status(401).json({ msg: 'Unauthorized', isVerified: false });
@@ -103,7 +102,6 @@ class AuthController {
         .select('-password -refreshToken -__v')
         .lean();
 
-      console.log(user);
 
       if (!user) {
         return res

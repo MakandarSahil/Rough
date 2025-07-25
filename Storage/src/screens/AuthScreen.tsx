@@ -41,8 +41,6 @@ export default function AuthScreen() {
         { text: 'OK', onPress: () => dispatch(clearAuthError()) }, // Clear error on dismiss
       ]);
     }
-    console.log(getToken());
-    console.log();
   }, [error, dispatch]);
 
   const handleSubmit = async () => {

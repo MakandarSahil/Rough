@@ -17,6 +17,7 @@ export const loginApi = async (email: string, password: string) => {
       msg: res.data.msg,
       accessToken: res.data.accessToken,
       refreshToken: res.data.refreshToken,
+      externalId: res.data.externalId,
       userId: res.data.id 
     };
   } catch (err: any) {

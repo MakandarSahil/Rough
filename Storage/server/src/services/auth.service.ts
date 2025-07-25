@@ -5,7 +5,8 @@ import { getUuId } from '../utils/uuid';
 
 class AuthService {
   public async register(name: string, email: string, password: string) {
-    const user = await User.create({ name, email, password });
+    const external_id = getUuId();
+    const user = await User.create({ name, email, password, external_id });
     user.password = '';
     return user;
   }
@@ -35,11 +36,13 @@ class AuthService {
     await redisClient.set(`refresh_token:${user._id}:`, rt_jti, {
       EX: 30 * 24 * 60 * 60,
     });
+    console.log("login service: ", user.external_id);
 
     return {
       msg: 'Login successful',
       accessToken,
       refreshToken,
+      externalId: user.external_id,
       id: user._id as string,
     };
   }

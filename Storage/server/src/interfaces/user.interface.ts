@@ -6,4 +6,5 @@ export interface IUser extends Document {
   number?: string;
   password: string;
   refreshToken?: string;
+  external_id?: string;
 }

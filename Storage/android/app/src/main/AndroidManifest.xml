@@ -23,8 +23,13 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
-      <meta-data 
-    android:name="com.onesignal.android.DEFAULT_CHANNEL_ID" 
-    android:value="@string/onesignal_channel_id"/>
+      <!-- OneSignal Notification Channel Configuration -->
+      <meta-data
+          android:name="com.onesignal.NotificationChannel.DEFAULT_CHANNEL_ID"
+          android:value="@string/onesignal_channel_id"/>
+        
+      <meta-data
+          android:name="com.onesignal.NotificationChannel.Importance"
+          android:value="@string/onesignal_channel_importance"/>
     </application>
 </manifest>

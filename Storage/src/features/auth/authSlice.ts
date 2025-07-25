@@ -4,6 +4,7 @@ import { getUserApi, googleLoginApi, loginApi, signupApi } from '../../api/authA
 import { TokenService } from '../../hooks/useToken';
 import { ApiError } from '../../utils/errors';
 import { saveToken } from '../../auth/token';
+import { OneSignal } from 'react-native-onesignal';
 
 export interface User {
   id: string;
@@ -35,9 +36,10 @@ export const loginUser = createAsyncThunk(
     { rejectWithValue },
   ) => {
     try {
-      const { accessToken, refreshToken, userId } = await loginApi(email, password);
+      const { accessToken, refreshToken, userId, externalId } = await loginApi(email, password);
       await TokenService.setTokens(accessToken, refreshToken);
-      return { accessToken, userId };
+      await TokenService.setExternalId(externalId);
+      return { accessToken, userId, externalId };
     } catch (error) {
       const errorMessage =
         error instanceof ApiError
@@ -88,6 +90,8 @@ export const fetchUser = createAsyncThunk(
 
 export const logoutUser = createAsyncThunk('auth/logout', async () => {
   await TokenService.clearTokens();
+  await TokenService.clearExternalId();
+  await OneSignal.logout();
 });
 
 export const googleLoginUser = createAsyncThunk(

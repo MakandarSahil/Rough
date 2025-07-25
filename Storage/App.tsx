@@ -3,76 +3,42 @@ import React, { useEffect } from 'react';
 import { Provider } from 'react-redux';
 import { store } from './src/store';
 import AppNavigator from './src/navigation/AppNavigator';
-import { OneSignal, LogLevel } from 'react-native-onesignal';
-import { Alert } from 'react-native';
-import axios from 'axios';
+import { usePushNotifications } from './src/hooks/usePushNotifications';
 
-export default function App() {
-  const waitUntilSubscribed = async () => {
-    let isSubscribed = false;
-    let retries = 0;
+import { Platform } from 'react-native';
+import { OneSignal } from 'react-native-onesignal';
 
-    while (!isSubscribed && retries < 5) {
-      const sub = await OneSignal.User.pushSubscription.getOptedInAsync();
-      isSubscribed = sub?.isSubscribed ?? false;
-      console.log('Push Subscription State:', isSubscribed);
+const ONE_SIGNAL_APP_ID = 'a8739f4c-e910-4903-a466-d32c44a7ede8';
 
-      if (!isSubscribed) {
-        await new Promise(res => setTimeout(res, 2000)); // wait 2 seconds
-        retries++;
-      }
-    }
-
-    if (!isSubscribed) {
-      throw new Error('Device never subscribed. Cannot send notification.');
-    }
-  };
-
+function AppWrapper() {
   useEffect(() => {
-    OneSignal.Debug.setLogLevel(LogLevel.Verbose);
-    OneSignal.initialize('a8739f4c-e910-4903-a466-d32c44a7ede8');
-    OneSignal.Notifications.requestPermission(true);
-    waitUntilSubscribed();
-
-    const setupPushNotifications = async () => {
-      try {
-        // Get OneSignal ID
-        const onesignalId = await OneSignal.User.getOnesignalId();
-        if (!onesignalId) {
-          throw new Error('Could not get OneSignal ID');
-        }
-        console.log('OneSignal ID:', onesignalId);
-
-        // Register with your backend
-        const response = await axios.post(
-          'http://192.168.50.34:3000/noti/sendNoti',
-          { onesignal_id: onesignalId },
-          { headers: { 'Content-Type': 'application/json' } },
-        );
-
-        const { externalId } = response.data;
-        console.log('External ID:', externalId);
-
-        // Optional: Set external ID in OneSignal
-        await OneSignal.login(externalId);
-      } catch (error) {
-        console.error('Push notification setup error:', error);
-        // Only show alert for critical errors
-        if (error instanceof Error) {
-          Alert.alert(
-            'Notification Error',
-            'We might not be able to send you notifications',
-          );
-        }
+    // Initialize OneSignal
+    OneSignal.initialize(ONE_SIGNAL_APP_ID);
+    
+    // Set the requires user privacy consent flag if needed
+    OneSignal.Notifications.canRequestPermission().then(canRequest => {
+      if (canRequest) {
+        OneSignal.Notifications.requestPermission(true);
       }
-    };
+    });
 
-    setupPushNotifications();
+    // Add subscription observer
+    OneSignal.Notifications.addEventListener('permissionChange', (state) => {
+      console.log('Subscription state changed:', state);
+    });
   }, []);
 
   return (
     <Provider store={store}>
-      <AppNavigator />
+      <App />
     </Provider>
   );
 }
+
+function App() {
+  usePushNotifications(ONE_SIGNAL_APP_ID);
+
+  return <AppNavigator />;
+}
+
+export default AppWrapper;

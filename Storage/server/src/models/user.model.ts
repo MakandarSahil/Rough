@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema<IUser>(
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     refreshToken: { type: String, required: false },
+    external_id: { type: String, required: false },
   },
   { timestamps: true }
 );
