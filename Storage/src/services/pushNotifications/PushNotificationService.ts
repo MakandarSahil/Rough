@@ -2,7 +2,6 @@
 import { LogLevel, OneSignal } from 'react-native-onesignal';
 import { TokenService } from '../../hooks/useToken';
 import api from '../../api/api';
-import { Platform } from 'react-native';
 
 class PushNotificationService {
   private static initialized = false;
@@ -35,10 +34,16 @@ class PushNotificationService {
   static async registerWithBackend() {
     try {
       const externalId = await TokenService.getExternalId();
+      // const onesignal_Id = await OneSignal.User.getOnesignalId();
+      // console.log(onesignal_Id)
 
       if (!externalId) {
         throw new Error('Could not get External ID');
       }
+
+      // if (!onesignal_Id) {
+      //   throw new Error('Could not get External ID');
+      // }
 
       const response = await api.post('/noti/sendNoti', {
         external_id: externalId,
