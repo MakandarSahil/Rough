@@ -1,44 +1,68 @@
-// App.tsx
 import React, { useEffect } from 'react';
-import { Provider } from 'react-redux';
-import { store } from './src/store';
-import AppNavigator from './src/navigation/AppNavigator';
-import { usePushNotifications } from './src/hooks/usePushNotifications';
+import { View, Text, StyleSheet } from 'react-native';
+import { OneSignal, LogLevel } from 'react-native-onesignal';
+import axios from 'axios';
 
-import { Platform } from 'react-native';
-import { OneSignal } from 'react-native-onesignal';
+const ONESIGNAL_APP_ID = 'a8739f4c-e910-4903-a466-d32c44a7ede8';
 
-const ONE_SIGNAL_APP_ID = 'a8739f4c-e910-4903-a466-d32c44a7ede8';
+async function getExternalId(onesignalId: string): Promise<string | null> {
+  try {
+    const res = await axios.get('http://192.168.50.32:3000/noti/externalId', {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-function AppWrapper() {
+    if (res.data.externalId) {
+      return res.data.externalId;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error('Error getting externalId:', error);
+    return null;
+  }
+}
+
+async function getOnesignalId(): Promise<string | null> {
+  const onesignalId = await OneSignal.User.getOnesignalId();
+  return onesignalId;
+}
+
+const initOneSignal = async () => {
+  OneSignal.Debug.setLogLevel(LogLevel.Verbose);
+  OneSignal.initialize(ONESIGNAL_APP_ID);
+
+  // In production, you might want to request permission later
+  OneSignal.Notifications.requestPermission(true);
+
+  const onesignalId = await getOnesignalId();
+  console.log('OneSignal ID:', onesignalId);
+
+};
+
+function App() {
   useEffect(() => {
-    // Initialize OneSignal
-    OneSignal.initialize(ONE_SIGNAL_APP_ID);
-    
-    // Set the requires user privacy consent flag if needed
-    OneSignal.Notifications.canRequestPermission().then(canRequest => {
-      if (canRequest) {
-        OneSignal.Notifications.requestPermission(true);
-      }
-    });
-
-    // Add subscription observer
-    OneSignal.Notifications.addEventListener('permissionChange', (state) => {
-      console.log('Subscription state changed:', state);
-    });
+    initOneSignal();
   }, []);
 
   return (
-    <Provider store={store}>
-      <App />
-    </Provider>
+    <View style={styles.container}>
+      <Text style={styles.text}>Hello World</Text>
+    </View>
   );
 }
 
-function App() {
-  usePushNotifications(ONE_SIGNAL_APP_ID);
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'black',
+  },
+  text: {
+    color: 'white',
+  },
+});
 
-  return <AppNavigator />;
-}
-
-export default AppWrapper;
+export default App;

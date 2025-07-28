@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import axios from 'axios';
+import { getUuId } from '../utils/uuid';
+import redisClient from '../config/redis.config';
 
 const ONESIGNAL_REST_API_KEY =
   'os_v2_app_vbzz6thjcbeqhjdg2mwejj7n5ametp2rycbedquywraandpzhmfoe6ducagrili5r7jdi3wig4e3jbjljnfkfr2x76ntguxpijgoerq';
@@ -68,3 +70,25 @@ export const sendPushNoti = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const getExternalId = async (req: Request, res: Response) => {
+  try {
+    const external_id = `user_${getUuId()}`;
+    console.log(external_id);
+
+    await redisClient.set(`external_id: `, external_id);
+    
+    res.status(200).json({
+      externalId: external_id,
+    });
+  }catch (error: any) {
+    console.error(
+      'Get External ID Error:',
+      error.response?.data || error.message,
+    );
+    res.status(500).json({
+      error: 'Failed to send notification',
+      details: error.response?.data || error.message,
+    });
+  }
+}

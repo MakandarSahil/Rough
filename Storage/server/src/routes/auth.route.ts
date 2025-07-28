@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import AuthController from '../controllers/auth.controller';
 import { authenticate } from '../middlewares/auth.middleware';
-import { sendPushNoti } from '../controllers/noti.controller';
+import { getExternalId, sendPushNoti } from '../controllers/noti.controller';
 
 const router = Router();
 const authController = new AuthController();
@@ -15,5 +15,6 @@ router.get("/google", authController.googleAuth);
 
 
 router.post('/sendNoti', authenticate, sendPushNoti);
+router.post('/external-id', getExternalId);
 
 export default router;
