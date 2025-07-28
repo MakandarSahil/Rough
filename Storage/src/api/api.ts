@@ -5,8 +5,8 @@ import { ApiError } from '../utils/errors';
 import { TokenService } from '../hooks/useToken';
 
 // const API_BASE_URL = 'http://192.168.137.206:3000'; // utakrsh laptop
-const API_BASE_URL = 'http://10.142.206.3:3000'; // suyash wifi
-// const API_BASE_URL = 'http://192.168.50.32:3000'; // apple lab wifi
+// const API_BASE_URL = 'http://10.142.206.3:3000'; // suyash wifi
+const API_BASE_URL = 'http://192.168.50.32:3000'; // apple lab wifi
 // const API_BASE_URL = 'http://192.168.137.74:3000'; // shreyash laptop wifi
 
 const api = axios.create({

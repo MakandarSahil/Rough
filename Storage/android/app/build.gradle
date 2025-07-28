@@ -126,6 +126,9 @@ dependencies {
 
     // Firebase SDKs
     implementation 'com.google.firebase:firebase-analytics'
+
+    // ADD THIS LINE FOR ONESIGNAL
+    implementation 'com.onesignal:OneSignal:[5.0.0, 5.99.99]'
 }
 
 apply plugin: 'com.google.gms.google-services'
